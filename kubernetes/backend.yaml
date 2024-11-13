@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1 
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: matheusnicolay/guess-game-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_APP
+              value: "run.py"
+            - name: FLASK_DB_TYPE
+              value: "postgres"
+            - name: FLASK_DB_USER
+              value: "postgres"
+            - name: FLASK_DB_NAME
+              value: "guess_game_db"
+            - name: FLASK_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: FLASK_DB_HOST
+              value: "postgres"
+            - name: FLASK_DB_PORT
+              value: "5432"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  clusterIP: None  # Serviço "headless"
